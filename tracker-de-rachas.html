@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tracker de Rachas</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --input: #0f172a;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --line: #334155;
+    --accent: #818cf8;
+    --good: #34d399;
+    --good-soft: #064e3b;
+    --good-text: #6ee7b7;
+    --bad: #fb7185;
+    --bad-soft: #4c0519;
+    --bad-text: #fda4af;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 28px 16px 60px;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; }
+  header h1 {
+    margin: 0 0 6px;
+    font-size: 26px;
+    letter-spacing: -0.5px;
+  }
+  header p { margin: 0 0 22px; color: var(--muted); font-size: 14px; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 18px 20px;
+    margin-bottom: 14px;
+  }
+  .add-card h2 { margin: 0 0 14px; font-size: 17px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .row + .row { margin-top: 10px; }
+  input[type="text"] {
+    flex: 1;
+    min-width: 180px;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    background: var(--input);
+    color: var(--text);
+    transition: border-color 0.15s;
+  }
+  input[type="text"]:focus { border-color: var(--accent); }
+  .pills { display: flex; gap: 6px; }
+  .pill {
+    padding: 9px 16px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: transparent;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    color: var(--muted);
+    transition: all 0.15s;
+  }
+  .pill.good.active { background: var(--good-soft); border-color: var(--good); color: var(--good-text); font-weight: 600; }
+  .pill.bad.active { background: var(--bad-soft); border-color: var(--bad); color: var(--bad-text); font-weight: 600; }
+  .label-row { display: flex; gap: 8px; }
+  .label-row input { flex: 1; }
+  .icon-btn {
+    width: 38px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--input);
+    cursor: pointer;
+    font-size: 15px;
+    color: var(--muted);
+  }
+  .icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn {
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: none;
+    font-size: 14px;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .btn.primary { background: var(--accent); color: #fff; font-weight: 600; }
+  .btn.primary:hover { filter: brightness(1.1); }
+  .btn.ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); }
+  .btn.ghost:hover { color: var(--text); border-color: var(--muted); }
+  .btn.small { padding: 6px 12px; font-size: 13px; }
+  .btn.danger { background: transparent; color: var(--bad); border: 1px solid var(--bad); }
+  .btn.danger:hover { background: var(--bad-soft); }
+  .weekbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 4px 0 16px;
+  }
+  .week-title { font-weight: 600; font-size: 15px; flex: 1; min-width: 200px; }
+  .nav-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    font-size: 17px;
+    cursor: pointer;
+    color: var(--muted);
+    line-height: 1;
+  }
+  .nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .today-summary { width: 100%; font-size: 13px; color: var(--muted); }
+
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 14px; }
+  .stat {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 14px 16px;
+  }
+  .stat-n { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; color: var(--accent); }
+  .stat-l {
+    margin-top: 3px;
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  .stat-s {
+    margin-top: 3px;
+    font-size: 12px;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  @media (max-width: 700px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+
+  .h-row { display: flex; align-items: center; gap: 18px; padding: 14px 18px; margin-bottom: 10px; }
+  .h-ring { position: relative; width: 64px; height: 64px; flex: none; }
+  .h-ring circle.track { stroke: var(--line); }
+  .h-ring circle.val { stroke: var(--accent); }
+  .h-ring circle.val.full { stroke: var(--good); }
+  .h-ring span {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--text);
+  }
+  .h-mid { flex: 1; min-width: 0; }
+  .h-name { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 9px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  .badge.good { background: var(--good-soft); color: var(--good-text); }
+  .badge.bad { background: var(--bad-soft); color: var(--bad-text); }
+  .h-label {
+    margin-top: 3px;
+    font-size: 12px;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .h-strip { margin-top: 10px; display: flex; gap: 6px; }
+  .dot {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 2px solid var(--line);
+    background: var(--input);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    cursor: pointer;
+    font-family: inherit;
+    display: grid;
+    place-items: center;
+    transition: transform 0.12s;
+  }
+  .dot:hover { transform: scale(1.1); }
+  .dot.done { background: var(--good); border-color: var(--good); color: #052e1b; }
+  .dot.miss { background: #450a0a; border-color: #881337; color: var(--bad-text); }
+  .dot.fut { opacity: 0.4; }
+  .dot.today { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .h-nums { flex: none; text-align: right; }
+  .h-nums div { font-size: 12px; color: var(--muted); }
+  .h-nums b { display: block; font-size: 16px; color: var(--text); }
+  .h-nums div + div { margin-top: 6px; }
+  .h-actions { margin-top: 10px; display: flex; gap: 6px; }
+  .h-actions button {
+    border: none;
+    background: transparent;
+    font-size: 12.5px;
+    color: var(--muted);
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 7px;
+    font-family: inherit;
+  }
+  .h-actions button:hover { background: var(--input); color: var(--text); }
+  .h-actions .del:hover { color: var(--bad); }
+  .edit-form { display: flex; flex-direction: column; gap: 10px; }
+  .empty { text-align: center; padding: 40px 20px; color: var(--muted); }
+  .empty h3 { margin: 0 0 6px; color: var(--text); }
+  footer { margin-top: 26px; text-align: center; font-size: 12px; color: var(--muted); }
+  @media (max-width: 560px) {
+    .h-row { flex-wrap: wrap; }
+    .h-nums { text-align: left; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Tracker de Rachas</h1>
+    <p>Agrega hábitos buenos y malos, y marca cada día de la semana qué cumpliste. Tus datos se guardan en este navegador.</p>
+  </header>
+
+  <section class="card add-card">
+    <h2>Nuevo hábito</h2>
+    <div class="row">
+      <input type="text" id="nameInput" placeholder="Nombre del hábito (ej. Leer, Tomar soda, Ejercicio)" autocomplete="off">
+      <div class="pills">
+        <button class="pill good active" data-type="bueno">Bueno</button>
+        <button class="pill bad" data-type="malo">Malo</button>
+      </div>
+    </div>
+    <div class="row label-row">
+      <input type="text" id="labelInput" placeholder="Etiqueta de cada día" autocomplete="off">
+      <button class="icon-btn" id="regenBtn" title="Regenerar etiqueta">&#8635;</button>
+    </div>
+    <div class="row">
+      <button class="btn primary" id="addBtn">Agregar hábito</button>
+      <button class="btn ghost" id="examplesBtn">Cargar ejemplos</button>
+    </div>
+  </section>
+
+  <section class="weekbar">
+    <button class="nav-btn" id="prevWeek">&lsaquo;</button>
+    <div class="week-title" id="weekTitle"></div>
+    <button class="nav-btn" id="nextWeek">&rsaquo;</button>
+    <button class="btn ghost small" id="todayBtn">Hoy</button>
+    <div class="today-summary" id="todaySummary"></div>
+  </section>
+
+  <section class="stats" id="stats"></section>
+
+  <main id="habitsList"></main>
+
+  <footer>Los datos se guardan automáticamente en tu navegador (localStorage).</footer>
+</div>
+
+<script>
+  const KEY = "trackerRachas_v1";
+  const DAYS = ["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"];
+  const $ = (id) => document.getElementById(id);
+  const today = new Date();
+  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+  let state = { habits: [], completions: {}, weekOffset: 0 };
+  try { state = Object.assign(state, JSON.parse(localStorage.getItem(KEY))); } catch (e) {}
+
+  let addType = "bueno";
+  let labelAuto = true;
+
+  function save() {
+    localStorage.setItem(KEY, JSON.stringify(state));
+  }
+
+  function dateKey(d) {
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+
+  function isToday(d) {
+    return d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth() && d.getDate() === today.getDate();
+  }
+
+  function getWeekStart(offset) {
+    const now = new Date();
+    const day = now.getDay();
+    const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(now.getFullYear(), now.getMonth(), diff);
+    monday.setDate(monday.getDate() + offset * 7);
+    return monday;
+  }
+
+  function getWeekDates(offset) {
+    const monday = getWeekStart(offset);
+    const dates = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      dates.push(d);
+    }
+    return dates;
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+
+  function defaultLabel(name, type) {
+    const n = name.trim();
+    return type === "bueno" ? "Este dia si " + n : "Este dia no " + n;
+  }
+
+  function computeStreak(habit) {
+    const comps = state.completions[habit.id] || {};
+    let best = 0, run = 0;
+    const start = new Date(todayStart);
+    start.setDate(start.getDate() - 730);
+    for (let d = new Date(todayStart); d >= start; d.setDate(d.getDate() - 1)) {
+      if (comps[dateKey(d)]) { run++; if (run > best) best = run; }
+      else run = 0;
+    }
+    let current = 0;
+    let d = new Date(todayStart);
+    if (!comps[dateKey(d)]) d.setDate(d.getDate() - 1);
+    if (comps[dateKey(d)]) {
+      while (comps[dateKey(d)]) { current++; d.setDate(d.getDate() - 1); }
+    }
+    return { current, best };
+  }
+
+  function weekCount(habit, dates) {
+    const comps = state.completions[habit.id] || {};
+    let done = 0, total = 0;
+    for (const d of dates) {
+      if (d <= todayStart) { total++; if (comps[dateKey(d)]) done++; }
+    }
+    return { done, total };
+  }
+
+  function dayDot(habit, d) {
+    const key = dateKey(d);
+    const marked = !!(state.completions[habit.id] || {})[key];
+    let cls = "dot";
+    if (marked) cls += " done";
+    else if (d < todayStart) cls += " miss";
+    else if (!isToday(d)) cls += " fut";
+    if (isToday(d)) cls += " today";
+    const wd = DAYS[(d.getDay() + 6) % 7];
+    const stateTxt = marked ? "cumplido" : (d < todayStart ? "no cumplido" : "por marcar");
+    const title = escapeHtml(habit.label) + " - " + wd + " " + d.getDate() + "/" + (d.getMonth() + 1) + (isToday(d) ? " (hoy)" : "") + " - " + stateTxt;
+    const sym = marked ? "&#10003;" : (d < todayStart ? "&#10005;" : "");
+    return '<button class="' + cls + '" data-act="toggle" data-key="' + key + '" title="' + title + '">' + sym + '</button>';
+  }
+
+  function badgeHtml(habit) {
+    return habit.type === "bueno"
+      ? '<span class="badge good">Bueno</span>'
+      : '<span class="badge bad">Malo</span>';
+  }
+
+  function habitRow(habit) {
+    const dates = getWeekDates(state.weekOffset);
+    const streak = computeStreak(habit);
+    const wc = weekCount(habit, dates);
+    const pct = wc.total > 0 ? Math.round(wc.done / wc.total * 100) : 0;
+    const C = 2 * Math.PI * 26;
+    const ringCls = pct >= 100 ? "val full" : "val";
+    const strip = dates.map((d) => dayDot(habit, d)).join("");
+    return '<div class="card h-row" data-id="' + habit.id + '">' +
+      '<div class="h-ring"><svg width="64" height="64" viewBox="0 0 64 64">' +
+      '<circle class="track" cx="32" cy="32" r="26" stroke-width="6" fill="none"/>' +
+      '<circle class="' + ringCls + '" cx="32" cy="32" r="26" stroke-width="6" fill="none" stroke-linecap="round" transform="rotate(-90 32 32)" stroke-dasharray="' + (pct / 100 * C) + ' ' + C + '"/></svg>' +
+      '<span>' + (wc.total > 0 ? pct + "%" : "&mdash;") + '</span></div>' +
+      '<div class="h-mid">' +
+      '<div class="h-name">' + escapeHtml(habit.name) + ' ' + badgeHtml(habit) + '</div>' +
+      '<div class="h-label">&ldquo;' + escapeHtml(habit.label) + '&rdquo;</div>' +
+      '<div class="h-strip">' + strip + '</div>' +
+      '<div class="h-actions"><button data-act="edit">Editar</button><button data-act="del" class="del">Eliminar</button></div>' +
+      '</div>' +
+      '<div class="h-nums"><div>Racha<b>' + streak.current + '</b></div><div>Récord<b>' + streak.best + '</b></div></div>' +
+      '</div>';
+  }
+
+  function editForm(habit) {
+    const type = habit.type === "bueno" ? "bueno" : "malo";
+    return '<div class="card" data-id="' + habit.id + '">' +
+      '<div class="edit-form">' +
+      '<input type="text" class="e-name" value="' + escapeHtml(habit.name) + '" placeholder="Nombre del habito">' +
+      '<div class="pills">' +
+      '<button class="pill good' + (type === "bueno" ? " active" : "") + '" data-etype="bueno">Bueno</button>' +
+      '<button class="pill bad' + (type === "malo" ? " active" : "") + '" data-etype="malo">Malo</button></div>' +
+      '<input type="text" class="e-label" value="' + escapeHtml(habit.label) + '" placeholder="Etiqueta de cada dia">' +
+      '<div class="row"><button class="btn primary small e-save">Guardar</button>' +
+      '<button class="btn ghost small e-cancel">Cancelar</button></div></div></div>';
+  }
+
+  function renderStats() {
+    const doneToday = state.habits.filter((h) => (state.completions[h.id] || {})[dateKey(todayStart)]).length;
+    const total = state.habits.length;
+    $("todaySummary").textContent = total
+      ? "Hoy cumpliste " + doneToday + " de " + total + " habitos."
+      : "Agrega tu primer habito para comenzar.";
+
+    if (!total) {
+      $("stats").innerHTML = "";
+      return;
+    }
+
+    let topCur = null, bestAll = null;
+    for (const h of state.habits) {
+      const s = computeStreak(h);
+      if (!topCur || s.current > topCur.s.current) topCur = { h, s };
+      if (!bestAll || s.best > bestAll.s.best) bestAll = { h, s };
+    }
+
+    const dow = today.getDay();
+    const daysElapsed = (dow + 6) % 7 + 1;
+    let perfect = 0;
+    const monday = getWeekStart(0);
+    for (let d = new Date(monday); d <= todayStart; d.setDate(d.getDate() + 1)) {
+      if (state.habits.every((h) => (state.completions[h.id] || {})[dateKey(d)])) perfect++;
+    }
+
+    const stats = [
+      { n: topCur.s.current, l: "Racha más larga hoy", s: topCur.h.name },
+      { n: bestAll.s.best, l: "Mejor racha", s: bestAll.h.name },
+      { n: perfect, l: "Días perfectos", s: "esta semana (" + daysElapsed + " días)" },
+      { n: doneToday + "/" + total, l: "Cumplido hoy", s: "hábitos marcados" }
+    ];
+    $("stats").innerHTML = stats.map((st) =>
+      '<div class="stat"><div class="stat-n">' + st.n + '</div><div class="stat-l">' + st.l + '</div><div class="stat-s">' + escapeHtml(st.s) + '</div></div>'
+    ).join("");
+  }
+
+  function render() {
+    const monday = getWeekStart(state.weekOffset);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    const fmt = (d) => d.toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" });
+    $("weekTitle").textContent = "Semana del " + fmt(monday) + " al " + fmt(sunday);
+
+    renderStats();
+
+    if (!state.habits.length) {
+      $("habitsList").innerHTML = '<div class="card empty"><h3>Aun no tienes habitos</h3>' +
+        '<p>Agrega uno arriba o carga ejemplos para ver como funciona.</p>' +
+        '<button class="btn ghost" data-act="examples">Cargar ejemplos</button></div>';
+      return;
+    }
+    $("habitsList").innerHTML = state.habits.map((h) => habitRow(h)).join("");
+  }
+
+  function toggleDay(habitId, key) {
+    if (!state.completions[habitId]) state.completions[habitId] = {};
+    if (state.completions[habitId][key]) delete state.completions[habitId][key];
+    else state.completions[habitId][key] = true;
+    save();
+    render();
+  }
+
+  function addHabit(name, type, label) {
+    if (!name.trim()) return false;
+    const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    state.habits.push({ id, name: name.trim(), type, label: label.trim() || defaultLabel(name, type) });
+    save();
+    return true;
+  }
+
+  function updateLabelInput() {
+    if (labelAuto) $("labelInput").value = defaultLabel($("nameInput").value, addType);
+  }
+
+  const examples = [
+    { name: "Leer 30 minutos", type: "bueno", label: "Este dia si lei 30 minutos" },
+    { name: "Hacer ejercicio", type: "bueno", label: "Este dia si hice ejercicio" },
+    { name: "Tomar soda", type: "malo", label: "Este dia no tome soda" },
+    { name: "Tomar alcohol", type: "malo", label: "Este dia no tome alcohol" },
+    { name: "Desvelarme", type: "malo", label: "Este dia no me desvele" }
+  ];
+
+  $("nameInput").addEventListener("input", updateLabelInput);
+
+  document.querySelectorAll(".pills .pill").forEach((p) => {
+    p.addEventListener("click", () => {
+      if (p.hasAttribute("data-type")) {
+        addType = p.dataset.type;
+        document.querySelectorAll('.add-card .pill[data-type]').forEach((x) => x.classList.toggle("active", x === p));
+        updateLabelInput();
+      }
+    });
+  });
+
+  $("regenBtn").addEventListener("click", () => {
+    labelAuto = true;
+    updateLabelInput();
+  });
+
+  $("labelInput").addEventListener("input", () => { labelAuto = false; });
+
+  $("addBtn").addEventListener("click", () => {
+    if (addHabit($("nameInput").value, addType, $("labelInput").value)) {
+      $("nameInput").value = "";
+      $("nameInput").focus();
+      labelAuto = true;
+      updateLabelInput();
+      render();
+    } else $("nameInput").focus();
+  });
+
+  $("nameInput").addEventListener("keydown", (e) => { if (e.key === "Enter") $("addBtn").click(); });
+
+  $("examplesBtn").addEventListener("click", () => {
+    examples.forEach((ex) => addHabit(ex.name, ex.type, ex.label));
+    render();
+  });
+
+  $("prevWeek").addEventListener("click", () => { state.weekOffset--; render(); });
+  $("nextWeek").addEventListener("click", () => { state.weekOffset++; render(); });
+  $("todayBtn").addEventListener("click", () => { state.weekOffset = 0; render(); });
+
+  $("habitsList").addEventListener("click", (e) => {
+    const el = e.target.closest("[data-act]");
+    if (!el) return;
+    const act = el.dataset.act;
+    const card = el.closest(".card");
+    if (!card) return;
+    const id = card.dataset.id;
+
+    if (act === "toggle") {
+      toggleDay(id, el.dataset.key);
+    } else if (act === "del") {
+      const habit = state.habits.find((h) => h.id === id);
+      if (habit && confirm('Eliminar el habito "' + habit.name + '"? Se pierde su historial.')) {
+        state.habits = state.habits.filter((h) => h.id !== id);
+        delete state.completions[id];
+        save();
+        render();
+      }
+    } else if (act === "edit") {
+      const habit = state.habits.find((h) => h.id === id);
+      if (!habit) return;
+      card.outerHTML = editForm(habit);
+      const form = document.querySelector('.card[data-id="' + id + '"]');
+      const nameIn = form.querySelector(".e-name");
+      nameIn.focus();
+      nameIn.setSelectionRange(nameIn.value.length, nameIn.value.length);
+      form.querySelector(".e-save").addEventListener("click", () => {
+        const n = form.querySelector(".e-name").value.trim();
+        if (!n) return;
+        const t = form.querySelector(".pill.active[data-etype]") ? form.querySelector(".pill.active[data-etype]").dataset.etype : habit.type;
+        habit.name = n;
+        habit.type = t;
+        habit.label = form.querySelector(".e-label").value.trim() || defaultLabel(n, t);
+        save();
+        render();
+      });
+      form.querySelector(".e-cancel").addEventListener("click", render);
+      form.querySelectorAll(".pill[data-etype]").forEach((p) => {
+        p.addEventListener("click", () => form.querySelectorAll(".pill[data-etype]").forEach((x) => x.classList.toggle("active", x === p)));
+      });
+      form.querySelectorAll("input").forEach((inp) => {
+        inp.addEventListener("keydown", (ev) => {
+          if (ev.key === "Enter") form.querySelector(".e-save").click();
+          if (ev.key === "Escape") render();
+        });
+      });
+    } else if (act === "examples") {
+      examples.forEach((ex) => addHabit(ex.name, ex.type, ex.label));
+      render();
+    }
+  });
+
+  render();
+</script>
+</body>
+</html>
