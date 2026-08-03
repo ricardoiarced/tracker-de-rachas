@@ -271,6 +271,7 @@
   <footer>Los datos se guardan automáticamente en tu navegador (localStorage).</footer>
 </div>
 
+<script src="tracker-stats.js"></script>
 <script>
   const KEY = "trackerRachas_v1";
   const DAYS = ["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"];
@@ -289,7 +290,7 @@
   }
 
   function dateKey(d) {
-    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    return TrackerStats.dateKey(d);
   }
 
   function isToday(d) {
@@ -326,30 +327,11 @@
   }
 
   function computeStreak(habit) {
-    const comps = state.completions[habit.id] || {};
-    let best = 0, run = 0;
-    const start = new Date(todayStart);
-    start.setDate(start.getDate() - 730);
-    for (let d = new Date(todayStart); d >= start; d.setDate(d.getDate() - 1)) {
-      if (comps[dateKey(d)]) { run++; if (run > best) best = run; }
-      else run = 0;
-    }
-    let current = 0;
-    let d = new Date(todayStart);
-    if (!comps[dateKey(d)]) d.setDate(d.getDate() - 1);
-    if (comps[dateKey(d)]) {
-      while (comps[dateKey(d)]) { current++; d.setDate(d.getDate() - 1); }
-    }
-    return { current, best };
+    return TrackerStats.streak(state.completions[habit.id] || {}, todayStart);
   }
 
   function weekCount(habit, dates) {
-    const comps = state.completions[habit.id] || {};
-    let done = 0, total = 0;
-    for (const d of dates) {
-      if (d <= todayStart) { total++; if (comps[dateKey(d)]) done++; }
-    }
-    return { done, total };
+    return TrackerStats.weekCount(state.completions[habit.id] || {}, dates, todayStart);
   }
 
   function dayDot(habit, d) {
@@ -410,10 +392,11 @@
   }
 
   function renderStats() {
-    const doneToday = state.habits.filter((h) => (state.completions[h.id] || {})[dateKey(todayStart)]).length;
+    const st = TrackerStats.computeStats({ habits: state.habits, completions: state.completions, todayStart });
     const total = state.habits.length;
+    const done = (st.todayDone.bueno ? st.todayDone.bueno.done : 0) + (st.todayDone.malo ? st.todayDone.malo.done : 0);
     $("todaySummary").textContent = total
-      ? "Hoy cumpliste " + doneToday + " de " + total + " habitos."
+      ? "Hoy cumpliste " + done + " de " + total + " habitos."
       : "Agrega tu primer habito para comenzar.";
 
     if (!total) {
@@ -421,29 +404,16 @@
       return;
     }
 
-    let topCur = null, bestAll = null;
-    for (const h of state.habits) {
-      const s = computeStreak(h);
-      if (!topCur || s.current > topCur.s.current) topCur = { h, s };
-      if (!bestAll || s.best > bestAll.s.best) bestAll = { h, s };
-    }
-
-    const dow = today.getDay();
-    const daysElapsed = (dow + 6) % 7 + 1;
-    let perfect = 0;
-    const monday = getWeekStart(0);
-    for (let d = new Date(monday); d <= todayStart; d.setDate(d.getDate() + 1)) {
-      if (state.habits.every((h) => (state.completions[h.id] || {})[dateKey(d)])) perfect++;
-    }
-
-    const stats = [
-      { n: topCur.s.current, l: "Racha más larga hoy", s: topCur.h.name },
-      { n: bestAll.s.best, l: "Mejor racha", s: bestAll.h.name },
-      { n: perfect, l: "Días perfectos", s: "esta semana (" + daysElapsed + " días)" },
-      { n: doneToday + "/" + total, l: "Cumplido hoy", s: "hábitos marcados" }
+    const cards = [
+      { n: st.topCurrent ? st.topCurrent.current : "—", l: "Racha más larga hoy", s: st.topCurrent ? st.topCurrent.name : "sin hábitos" },
+      { n: st.bestEver ? st.bestEver.best : "—", l: "Mejor racha", s: st.bestEver ? st.bestEver.name : "sin hábitos" },
+      { n: st.perfect.bueno === null ? "—" : st.perfect.bueno, l: "Días perfectos buenos", s: "esta semana (" + st.elapsed + " días)" },
+      { n: st.perfect.malo === null ? "—" : st.perfect.malo, l: "Días perfectos malos", s: "esta semana (" + st.elapsed + " días)" },
+      { n: st.todayDone.bueno ? st.todayDone.bueno.done + "/" + st.todayDone.bueno.total : "—", l: "Cumplido buenos hoy", s: "hábitos de tipo bueno" },
+      { n: st.todayDone.malo ? st.todayDone.malo.done + "/" + st.todayDone.malo.total : "—", l: "Cumplido malos hoy", s: "hábitos de tipo malo" }
     ];
-    $("stats").innerHTML = stats.map((st) =>
-      '<div class="stat"><div class="stat-n">' + st.n + '</div><div class="stat-l">' + st.l + '</div><div class="stat-s">' + escapeHtml(st.s) + '</div></div>'
+    $("stats").innerHTML = cards.map((c) =>
+      '<div class="stat"><div class="stat-n">' + c.n + '</div><div class="stat-l">' + c.l + '</div><div class="stat-s">' + escapeHtml(c.s) + '</div></div>'
     ).join("");
   }
 
