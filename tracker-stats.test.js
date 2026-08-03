@@ -96,6 +96,7 @@ test("computeStats: desglosa rachas, dias perfectos y cumplido de hoy por tipo",
   assert.deepStrictEqual(st.bestEver, { name: "Leer", best: 7 });
   assert.deepStrictEqual(st.perfect, { bueno: 3, malo: 4 });
   assert.deepStrictEqual(st.todayDone, { bueno: { done: 1, total: 2 }, malo: { done: 1, total: 1 } });
+  assert.strictEqual(st.todayTotal, 2);
   assert.strictEqual(st.elapsed, 4);
 });
 
@@ -109,6 +110,7 @@ test("computeStats: sin habitos de un tipo, no reporta perfect ni hoy para ese t
   assert.strictEqual(st.perfect.bueno, 4);
   assert.strictEqual(st.perfect.malo, null);
   assert.strictEqual(st.todayDone.malo, null);
+  assert.strictEqual(st.todayTotal, 1);
 });
 
 test("computeStats: sin habitos, todo vacio", () => {
@@ -117,5 +119,6 @@ test("computeStats: sin habitos, todo vacio", () => {
   assert.strictEqual(st.bestEver, null);
   assert.deepStrictEqual(st.perfect, { bueno: null, malo: null });
   assert.deepStrictEqual(st.todayDone, { bueno: null, malo: null });
+  assert.strictEqual(st.todayTotal, 0);
   assert.strictEqual(st.elapsed, 4);
 });

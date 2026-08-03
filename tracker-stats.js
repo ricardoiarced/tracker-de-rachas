@@ -33,9 +33,10 @@
     return { done, total };
   }
 
-    function computeStats(state) {
+  function computeStats(state) {
     const { habits, completions, todayStart } = state;
     const byType = (t) => habits.filter((h) => h.type === t);
+    const isDone = (h, d) => !!(completions[h.id] || {})[dateKey(d)];
 
     let topCurrent = null, bestEver = null;
     for (const h of habits) {
@@ -54,7 +55,7 @@
       if (!list.length) return null;
       let count = 0;
       for (let d = new Date(monday); d <= todayStart; d.setDate(d.getDate() + 1)) {
-        if (list.every((h) => (completions[h.id] || {})[dateKey(d)])) count++;
+        if (list.every((h) => isDone(h, d))) count++;
       }
       return count;
     }
@@ -62,16 +63,18 @@
     function todayDoneFor(type) {
       const list = byType(type);
       if (!list.length) return null;
-      const k = dateKey(todayStart);
-      return { done: list.filter((h) => (completions[h.id] || {})[k]).length, total: list.length };
+      return { done: list.filter((h) => isDone(h, todayStart)).length, total: list.length };
     }
 
+    const bueno = todayDoneFor("bueno");
+    const malo = todayDoneFor("malo");
     return {
       topCurrent,
       bestEver,
       elapsed,
       perfect: { bueno: perfectFor("bueno"), malo: perfectFor("malo") },
-      todayDone: { bueno: todayDoneFor("bueno"), malo: todayDoneFor("malo") }
+      todayDone: { bueno, malo },
+      todayTotal: (bueno ? bueno.done : 0) + (malo ? malo.done : 0)
     };
   }
 
