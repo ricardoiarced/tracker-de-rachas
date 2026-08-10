@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PROTOTIPO - Sesión demo</title>
+<!-- PROTOTIPO DESECHABLE: tres experiencias de Sesión demo, intercambiables con ?variant=. -->
+<style>
+  :root {
+    --bg: #0b1120;
+    --surface: #172033;
+    --surface-2: #202b41;
+    --text: #edf2f7;
+    --muted: #9cacc2;
+    --line: #34425a;
+    --accent: #8b8cf8;
+    --accent-dark: #5556c9;
+    --good: #4ade80;
+    --warn: #fbbf24;
+    --bad: #fb7185;
+    --paper: #f5f1e8;
+    --ink: #1f2933;
+    --rust: #bb4d2f;
+  }
+
+  * { box-sizing: border-box; }
+  html { min-height: 100%; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    overflow-x: hidden;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  button, a { font: inherit; }
+  button { cursor: pointer; }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 42px;
+    padding: 9px 17px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 750;
+    text-decoration: none;
+  }
+  .btn:hover { filter: brightness(1.08); }
+  .btn.secondary { border-color: var(--line); background: transparent; color: inherit; }
+  .btn.danger { border-color: var(--bad); background: transparent; color: var(--bad); }
+  .btn.ink { background: var(--ink); color: #fff; }
+  .btn.rust { background: var(--rust); color: #fff; }
+  .btn.small { min-height: 34px; padding: 6px 11px; font-size: 13px; }
+
+  .mock-app { width: min(900px, 100%); margin: 0 auto; }
+  .mock-app header { margin-bottom: 20px; }
+  .mock-app h1 { margin: 0 0 5px; font-size: clamp(24px, 4vw, 34px); }
+  .mock-app header p { margin: 0; color: var(--muted); }
+  .mock-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .mock-stat, .mock-habit, .mock-new {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--surface);
+  }
+  .mock-stat { padding: 14px; }
+  .mock-stat strong { display: block; color: var(--accent); font-size: 25px; }
+  .mock-stat span { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; }
+  .mock-new { display: flex; gap: 10px; margin: 12px 0; padding: 14px; }
+  .fake-input { flex: 1; border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px; color: var(--muted); }
+  .mock-habit { display: grid; grid-template-columns: minmax(150px, 1fr) auto auto; align-items: center; gap: 18px; margin-top: 10px; padding: 16px; }
+  .mock-habit b { display: block; }
+  .mock-habit small { color: var(--muted); }
+  .week { display: flex; gap: 6px; }
+  .day { display: grid; width: 29px; height: 29px; place-items: center; border: 1px solid var(--line); border-radius: 50%; color: var(--muted); font-size: 11px; }
+  .day.done { border-color: var(--good); background: var(--good); color: #092814; font-weight: 800; }
+  .streak { color: var(--muted); font-size: 12px; text-align: right; }
+  .streak strong { color: var(--text); font-size: 20px; }
+  .demo-chip { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; }
+  .demo-chip::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--good); }
+
+  .state-icon {
+    display: grid;
+    width: 52px;
+    height: 52px;
+    place-items: center;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--accent) 18%, transparent);
+    color: var(--accent);
+    font-size: 24px;
+    font-weight: 900;
+  }
+  .spinner {
+    width: 34px;
+    height: 34px;
+    border: 3px solid color-mix(in srgb, currentColor 25%, transparent);
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: spin .85s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Variante A: una puerta explícita antes de entrar. */
+  .variant-a { min-height: 100vh; background: radial-gradient(circle at 15% 10%, #25245c 0, var(--bg) 35%); }
+  .a-gate { display: grid; min-height: 100vh; grid-template-columns: 1.05fr .95fr; }
+  .a-copy { display: flex; flex-direction: column; justify-content: center; padding: clamp(34px, 7vw, 100px); }
+  .eyebrow { color: #b9baff; font-size: 12px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+  .a-copy h1 { max-width: 680px; margin: 14px 0; font-size: clamp(40px, 6vw, 78px); line-height: .98; letter-spacing: -.055em; }
+  .a-copy > p { max-width: 620px; color: var(--muted); font-size: 18px; line-height: 1.6; }
+  .a-points { display: grid; gap: 10px; margin: 28px 0; color: #cbd5e1; }
+  .a-points span::before { content: "✓"; margin-right: 10px; color: var(--good); font-weight: 900; }
+  .a-action { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .a-action small { max-width: 290px; color: var(--muted); }
+  .a-preview { display: grid; place-items: center; overflow: hidden; border-left: 1px solid #2d3850; background: #11192a; padding: 46px; }
+  .preview-stack { width: min(420px, 100%); transform: rotate(1.5deg); }
+  .preview-card { margin-top: 12px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); padding: 18px; box-shadow: 0 30px 80px #0008; }
+  .preview-card .week { margin-top: 16px; }
+  .a-center { display: grid; min-height: 100vh; place-items: center; padding: 30px 20px 120px; text-align: center; }
+  .a-state { max-width: 510px; }
+  .a-state .state-icon, .a-state .spinner { margin: 0 auto 18px; }
+  .a-state h1 { margin: 0 0 10px; font-size: 36px; }
+  .a-state p { color: var(--muted); line-height: 1.6; }
+  .a-state .actions { display: flex; justify-content: center; gap: 10px; margin-top: 24px; flex-wrap: wrap; }
+  .a-ready { min-height: 100vh; padding: 0 20px 120px; }
+  .a-strip { display: flex; align-items: center; justify-content: space-between; gap: 15px; margin: 0 -20px 30px; padding: 11px max(20px, calc((100vw - 900px) / 2)); border-bottom: 1px solid #413f7c; background: #272750; }
+  .a-strip-right { display: flex; align-items: center; gap: 13px; }
+
+  /* Variante B: se ve el producto primero y la sesión aparece en contexto. */
+  .variant-b { min-height: 100vh; background: #e8e0d3; color: var(--ink); }
+  .b-shell { min-height: 100vh; padding: 34px max(18px, calc((100vw - 960px) / 2)) 130px; }
+  .variant-b .mock-app { color: var(--ink); }
+  .variant-b .mock-app header p, .variant-b .mock-habit small, .variant-b .streak { color: #667085; }
+  .variant-b .mock-stat, .variant-b .mock-habit, .variant-b .mock-new { border-color: #c8bfb0; background: #f8f4ed; box-shadow: 0 8px 20px #6d5e4b10; }
+  .variant-b .mock-stat strong { color: var(--rust); }
+  .variant-b .fake-input, .variant-b .day { border-color: #c8bfb0; color: #746c61; }
+  .variant-b .day.done { border-color: #4c9462; background: #4c9462; color: #fff; }
+  .variant-b .streak strong { color: var(--ink); }
+  .b-top { display: flex; justify-content: space-between; gap: 20px; align-items: center; margin-bottom: 27px; }
+  .b-mark { font-family: Georgia, serif; font-size: 23px; font-weight: 800; }
+  .b-status { display: flex; align-items: center; gap: 12px; padding: 8px 10px 8px 14px; border: 1px solid #b9ad9c; border-radius: 999px; background: #f7f1e7; }
+  .b-scrim { position: fixed; inset: 0; z-index: 4; background: #17202c75; backdrop-filter: blur(3px); }
+  .b-sheet {
+    position: fixed;
+    z-index: 5;
+    right: clamp(16px, 5vw, 70px);
+    bottom: 95px;
+    width: min(470px, calc(100vw - 32px));
+    border: 1px solid #c8bfb0;
+    border-radius: 4px;
+    background: var(--paper);
+    color: var(--ink);
+    padding: 30px;
+    box-shadow: 12px 14px 0 #283446;
+  }
+  .b-sheet h2 { margin: 15px 0 8px; font-family: Georgia, serif; font-size: 32px; line-height: 1.05; }
+  .b-sheet p { color: #5e6671; line-height: 1.55; }
+  .b-sheet .actions { display: flex; gap: 9px; margin-top: 22px; flex-wrap: wrap; }
+  .b-sheet .state-icon { background: #e1d8ca; color: var(--rust); }
+  .b-sheet .spinner { color: var(--rust); }
+  .b-sheet.error { border-top: 6px solid #b4233b; }
+  .b-sheet.expired { border-top: 6px solid #bf7c13; }
+  .b-sheet.reset { border-top: 6px solid var(--rust); }
+
+  /* Variante C: recorrido visible y persistente. */
+  .variant-c { min-height: 100vh; background: #071b18; color: #e7f4ef; }
+  .c-layout { display: grid; min-height: 100vh; grid-template-columns: 340px 1fr; }
+  .c-rail { position: relative; z-index: 1; padding: 38px 32px 120px; border-right: 1px solid #285048; background: #0b2823; }
+  .c-brand { font-family: Georgia, serif; font-size: 23px; }
+  .c-rail h1 { margin: 55px 0 12px; font-family: Georgia, serif; font-size: 34px; line-height: 1.08; }
+  .c-rail > p { color: #9db9b1; line-height: 1.55; }
+  .c-steps { display: grid; gap: 0; margin: 34px 0; }
+  .c-step { display: grid; grid-template-columns: 30px 1fr; gap: 11px; min-height: 65px; color: #759a90; }
+  .c-step:not(:last-child)::after { content: ""; grid-column: 1; justify-self: center; width: 1px; height: 35px; margin-top: -5px; background: #37675e; }
+  .c-step i { display: grid; width: 28px; height: 28px; place-items: center; border: 1px solid #37675e; border-radius: 50%; font-style: normal; font-size: 12px; }
+  .c-step b { display: block; margin-top: 3px; color: #cce1db; }
+  .c-step.active i { border-color: #e7b34c; background: #e7b34c; color: #17201e; }
+  .c-step.active b { color: #ffe2a5; }
+  .c-step.done i { border-color: #4ade80; color: #4ade80; }
+  .c-actions { display: grid; gap: 9px; }
+  .c-content { display: grid; place-items: start center; padding: 50px 35px 130px; background: linear-gradient(135deg, #0d2924, #071b18 55%); }
+  .c-stage { width: min(850px, 100%); }
+  .c-state { display: flex; align-items: center; gap: 15px; margin-bottom: 26px; padding: 14px 16px; border: 1px solid #345a52; border-radius: 12px; background: #12332d; }
+  .c-state strong { display: block; }
+  .c-state small { color: #9db9b1; }
+  .c-state .state-icon { flex: none; width: 38px; height: 38px; background: #1b473f; color: #e7b34c; font-size: 18px; }
+  .variant-c .mock-stat, .variant-c .mock-habit, .variant-c .mock-new { border-color: #285048; background: #0e2b26; }
+  .variant-c .mock-stat strong { color: #e7b34c; }
+  .variant-c .fake-input, .variant-c .day { border-color: #37675e; }
+  .c-blocked { position: relative; opacity: .38; pointer-events: none; filter: saturate(.35); }
+  .c-blocked::after { content: "Vista previa"; position: absolute; inset: 0; display: grid; place-items: center; color: #fff; font-size: 20px; font-weight: 800; }
+
+  .prototype-bar {
+    position: fixed;
+    z-index: 20;
+    left: 50%;
+    bottom: 13px;
+    width: min(920px, calc(100vw - 20px));
+    transform: translateX(-50%);
+    border: 1px solid #536177;
+    border-radius: 15px;
+    background: #0a1020f2;
+    color: #fff;
+    padding: 9px;
+    box-shadow: 0 12px 45px #0009;
+    backdrop-filter: blur(12px);
+  }
+  .prototype-row { display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .prototype-row + .prototype-row { margin-top: 7px; }
+  .prototype-label { min-width: 210px; text-align: center; font-size: 13px; font-weight: 800; }
+  .proto-btn { min-height: 30px; border: 1px solid #49566c; border-radius: 8px; background: #182238; color: #dbe7f7; padding: 5px 9px; font-size: 12px; }
+  .proto-btn:hover, .proto-btn.active { border-color: #a4a6ff; background: #37386e; color: #fff; }
+  .proto-arrow { width: 34px; font-size: 17px; }
+
+  @media (max-width: 760px) {
+    .a-gate { grid-template-columns: 1fr; }
+    .a-copy { min-height: 100vh; padding: 42px 22px 135px; }
+    .a-copy h1 { font-size: 48px; }
+    .a-preview { display: none; }
+    .a-strip { align-items: stretch; flex-direction: column; }
+    .a-strip-right { align-items: center; justify-content: space-between; }
+    .a-strip-right small { min-width: 0; }
+    .c-layout { grid-template-columns: 1fr; }
+    .c-layout > *, .c-stage, .c-step, .c-step > div { min-width: 0; }
+    .c-rail { min-height: auto; padding: 25px 20px 28px; border-right: 0; border-bottom: 1px solid #285048; }
+    .c-rail h1 { margin-top: 24px; font-size: 29px; }
+    .c-steps { grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 22px 0; }
+    .c-step { display: block; min-height: auto; font-size: 11px; }
+    .c-step:not(:last-child)::after { display: none; }
+    .c-step b { font-size: 12px; }
+    .c-step span { display: block; overflow-wrap: anywhere; }
+    .c-content { padding: 28px 15px 135px; }
+    .mock-stats { grid-template-columns: 1fr 1fr; }
+    .mock-stat:last-child { display: none; }
+    .mock-habit { grid-template-columns: 1fr; gap: 10px; }
+    .streak { display: none; }
+    .mock-new { flex-direction: column; }
+    .b-shell { padding-top: 22px; }
+    .b-top { align-items: flex-start; }
+    .b-status span { display: none; }
+    .b-sheet { right: 16px; bottom: 132px; padding: 23px; box-shadow: 7px 8px 0 #283446; }
+    .b-sheet .actions { display: grid; }
+    .b-sheet .actions .btn { width: 100%; max-width: 100%; white-space: normal; }
+    .prototype-bar { bottom: 7px; }
+    .prototype-row:last-child { justify-content: flex-start; overflow-x: auto; padding-bottom: 2px; }
+    .prototype-label { min-width: 145px; }
+  }
+</style>
+</head>
+<body>
+<main id="prototype"></main>
+<nav class="prototype-bar" aria-label="Controles del prototipo">
+  <div class="prototype-row">
+    <button class="proto-btn proto-arrow" id="previousVariant" aria-label="Variante anterior">←</button>
+    <div class="prototype-label" id="variantLabel"></div>
+    <button class="proto-btn proto-arrow" id="nextVariant" aria-label="Variante siguiente">→</button>
+  </div>
+  <div class="prototype-row" id="scenarioButtons" aria-label="Escenarios simulados"></div>
+</nav>
+
+<script>
+  const variants = [
+    { key: "A", name: "Puerta clara" },
+    { key: "B", name: "Entrada contextual" },
+    { key: "C", name: "Recorrido guiado" }
+  ];
+  const scenarios = [
+    { key: "access", name: "Acceso" },
+    { key: "loading", name: "Carga" },
+    { key: "ready", name: "Uso" },
+    { key: "reset-confirm", name: "Reinicio" },
+    { key: "resetting", name: "Reiniciando" },
+    { key: "expired", name: "Expirada" },
+    { key: "error", name: "Error" }
+  ];
+  const params = new URLSearchParams(window.location.search);
+  const variant = variants.find((item) => item.key === params.get("variant")) || variants[0];
+  const scenario = scenarios.find((item) => item.key === params.get("scenario")) || scenarios[0];
+
+  function go(nextVariant, nextScenario) {
+    const url = new URL(window.location.href);
+    url.searchParams.set("variant", nextVariant || variant.key);
+    url.searchParams.set("scenario", nextScenario || scenario.key);
+    window.location.href = url.href;
+  }
+
+  function appMock() {
+    return `
+      <section class="mock-app" aria-label="Vista simulada de Registro de Hábitos">
+        <header><h1>Registro de Hábitos</h1><p>Marca cada día lo que cumpliste.</p></header>
+        <div class="mock-stats">
+          <div class="mock-stat"><strong>4</strong><span>Racha más larga</span></div>
+          <div class="mock-stat"><strong>12</strong><span>Mejor racha</span></div>
+          <div class="mock-stat"><strong>2/3</strong><span>Cumplidos hoy</span></div>
+        </div>
+        <div class="mock-new"><div class="fake-input">Nombre del hábito</div><button class="btn small">Agregar hábito</button></div>
+        ${habit("Leer 30 minutos", "Este día sí leí 30 minutos", [1, 1, 1, 0, 0])}
+        ${habit("Tomar soda", "Este día no tomé soda", [1, 1, 0, 0, 0])}
+      </section>`;
+  }
+
+  function habit(name, label, days) {
+    return `
+      <article class="mock-habit">
+        <div><b>${name}</b><small>${label}</small></div>
+        <div class="week">${days.map((done, index) => `<span class="day${done ? " done" : ""}">${done ? "✓" : index + 1}</span>`).join("")}</div>
+        <div class="streak">Racha<strong>${days.filter(Boolean).length}</strong></div>
+      </article>`;
+  }
+
+  function stateContent(buttonClass = "") {
+    const buttons = {
+      access: `<button class="btn ${buttonClass}" onclick="go(null, 'loading')">Entrar a la demo</button>`,
+      loading: `<button class="btn secondary" onclick="go(null, 'ready')">Simular carga completa</button>`,
+      ready: `<button class="btn danger small" onclick="go(null, 'reset-confirm')">Reiniciar demo</button>`,
+      "reset-confirm": `<button class="btn danger" onclick="go(null, 'resetting')">Sí, restaurar datos iniciales</button><button class="btn secondary" onclick="go(null, 'ready')">Cancelar</button>`,
+      resetting: `<button class="btn secondary" onclick="go(null, 'ready')">Simular reinicio completo</button>`,
+      expired: `<button class="btn ${buttonClass}" onclick="go(null, 'loading')">Crear otra Sesión demo</button>`,
+      error: `<button class="btn ${buttonClass}" onclick="go(null, 'loading')">Intentar de nuevo</button>`
+    };
+    return buttons[scenario.key];
+  }
+
+  function stateText() {
+    return {
+      access: { icon: "→", title: "Prueba la app sin registrarte", text: "Crearemos una Sesión demo solo para este navegador. Úsala únicamente con datos de prueba." },
+      loading: { icon: "spinner", title: "Preparando tu demo", text: "Estamos creando un espacio aislado y cargando datos de ejemplo. Normalmente tarda unos segundos." },
+      ready: { icon: "✓", title: "Sesión demo activa", text: "Guardado en el servidor · Expira después de 24 h sin actividad o al cumplir 7 días." },
+      "reset-confirm": { icon: "↺", title: "¿Restaurar los datos iniciales?", text: "Se eliminarán todos los Hábitos y Cumplidos de esta demo. La vigencia de la sesión no cambiará." },
+      resetting: { icon: "spinner", title: "Restaurando la demo", text: "No cierres esta página. Tus datos de prueba se están reemplazando de forma completa." },
+      expired: { icon: "!", title: "Esta Sesión demo expiró", text: "Sus datos ya no están disponibles. Puedes crear otra sesión aislada para seguir probando." },
+      error: { icon: "×", title: "No pudimos preparar la demo", text: "No se creó ninguna sesión. Revisa tu conexión e inténtalo de nuevo en unos segundos." }
+    }[scenario.key];
+  }
+
+  function stateIcon() {
+    const content = stateText();
+    return content.icon === "spinner" ? `<div class="spinner" aria-label="Cargando"></div>` : `<div class="state-icon">${content.icon}</div>`;
+  }
+
+  function renderA() {
+    const content = stateText();
+    if (scenario.key === "access") {
+      return `
+        <div class="variant-a a-gate">
+          <section class="a-copy">
+            <span class="eyebrow">Registro de Hábitos · demo pública</span>
+            <h1>Prueba tus rachas, sin crear una cuenta.</h1>
+            <p>Entra a una Sesión demo independiente con datos de ejemplo. Todo lo que cambies se guarda temporalmente solo para este navegador.</p>
+            <div class="a-points"><span>No necesitas registro ni contraseña</span><span>No uses datos reales o confidenciales</span><span>La demo expira automáticamente</span></div>
+            <div class="a-action">${stateContent()}<small>Al entrar aceptas usar este espacio únicamente para probar la aplicación.</small></div>
+          </section>
+          <aside class="a-preview" aria-label="Vista previa">
+            <div class="preview-stack">
+              <span class="eyebrow">Así se ve por dentro</span>
+              <div class="preview-card"><b>Leer 30 minutos</b><div class="week"><span class="day done">✓</span><span class="day done">✓</span><span class="day done">✓</span><span class="day">4</span><span class="day">5</span></div></div>
+              <div class="preview-card"><b>Tomar soda</b><div class="week"><span class="day done">✓</span><span class="day done">✓</span><span class="day">3</span><span class="day">4</span><span class="day">5</span></div></div>
+            </div>
+          </aside>
+        </div>`;
+    }
+    if (scenario.key === "ready") {
+      return `
+        <div class="variant-a a-ready">
+          <div class="a-strip"><span class="demo-chip">Sesión demo activa</span><div class="a-strip-right"><small>Última actividad: ahora · Máximo 7 días</small>${stateContent()}</div></div>
+          ${appMock()}
+        </div>`;
+    }
+    return `
+      <div class="variant-a a-center">
+        <section class="a-state">${stateIcon()}<h1>${content.title}</h1><p>${content.text}</p><div class="actions">${stateContent()}</div></section>
+      </div>`;
+  }
+
+  function renderB() {
+    const content = stateText();
+    const needsSheet = scenario.key !== "ready";
+    const sheetClass = scenario.key === "error" ? "error" : scenario.key === "expired" ? "expired" : scenario.key.includes("reset") ? "reset" : "";
+    return `
+      <div class="variant-b b-shell">
+        <div class="b-top"><div class="b-mark">Registro de Hábitos</div><div class="b-status"><span class="demo-chip">${scenario.key === "ready" ? "Demo activa · vence en 6 días" : "Modo de demostración"}</span>${scenario.key === "ready" ? stateContent() : ""}</div></div>
+        ${appMock()}
+        ${needsSheet ? `<div class="b-scrim"></div><section class="b-sheet ${sheetClass}">${stateIcon()}<h2>${content.title}</h2><p>${content.text}</p>${scenario.key === "access" ? "<p><strong>Sin cuenta.</strong> Tus cambios quedan aislados en este navegador y se eliminan al expirar.</p>" : ""}<div class="actions">${stateContent("rust")}</div></section>` : ""}
+      </div>`;
+  }
+
+  function renderC() {
+    const content = stateText();
+    const ready = scenario.key === "ready" || scenario.key.includes("reset");
+    const currentStep = scenario.key === "access" ? 1 : scenario.key === "loading" || scenario.key === "error" ? 2 : 3;
+    const railAction = scenario.key === "ready" ? stateContent() : stateContent("ink");
+    return `
+      <div class="variant-c c-layout">
+        <aside class="c-rail">
+          <div class="c-brand">Registro de Hábitos</div>
+          <h1>${content.title}</h1><p>${content.text}</p>
+          <div class="c-steps">
+            ${["Conoce la demo", "Prepara la sesión", "Prueba la app"].map((name, index) => `<div class="c-step ${index + 1 === currentStep ? "active" : index + 1 < currentStep ? "done" : ""}"><i>${index + 1 < currentStep ? "✓" : index + 1}</i><div><b>${name}</b><span>${index === 0 ? "Sin registro" : index === 1 ? "Espacio aislado" : "Datos temporales"}</span></div></div>`).join("")}
+          </div>
+          <div class="c-actions">${railAction}</div>
+        </aside>
+        <section class="c-content">
+          <div class="c-stage">
+            <div class="c-state">${stateIcon()}<div><strong>${content.title}</strong><small>${content.text}</small></div></div>
+            <div class="${ready ? "" : "c-blocked"}">${appMock()}</div>
+          </div>
+        </section>
+      </div>`;
+  }
+
+  document.getElementById("prototype").innerHTML = variant.key === "A" ? renderA() : variant.key === "B" ? renderB() : renderC();
+  document.getElementById("variantLabel").textContent = `${variant.key} — ${variant.name}`;
+  document.getElementById("scenarioButtons").innerHTML = scenarios.map((item) => `<button class="proto-btn ${item.key === scenario.key ? "active" : ""}" onclick="go(null, '${item.key}')">${item.name}</button>`).join("");
+
+  function cycleVariant(direction) {
+    const index = variants.findIndex((item) => item.key === variant.key);
+    go(variants[(index + direction + variants.length) % variants.length].key, null);
+  }
+  document.getElementById("previousVariant").addEventListener("click", () => cycleVariant(-1));
+  document.getElementById("nextVariant").addEventListener("click", () => cycleVariant(1));
+  document.addEventListener("keydown", (event) => {
+    if (["INPUT", "TEXTAREA"].includes(event.target.tagName) || event.target.isContentEditable) return;
+    if (event.key === "ArrowLeft") cycleVariant(-1);
+    if (event.key === "ArrowRight") cycleVariant(1);
+  });
+</script>
+</body>
+</html>
