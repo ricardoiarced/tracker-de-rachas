@@ -1,0 +1,53 @@
+{
+  "name": "registro-de-habitos",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "build": "vite build",
+    "dev": "npm run build && wrangler dev",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint src",
+    "test:legacy": "node --test tracker-stats.test.js",
+    "test:client": "vitest run --config vitest.client.config.mts",
+    "test:worker": "vitest run --config vitest.worker.config.mts",
+    "test": "npm run build && npm run test:legacy && npm run test:client && npm run test:worker",
+    "typecheck": "tsc --noEmit",
+    "audit": "npm audit --audit-level=high",
+    "ci": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run audit",
+    "migrate:preview": "wrangler d1 migrations apply DB --remote --env preview",
+    "migrate:production": "wrangler d1 migrations apply DB --remote",
+    "deploy:preview": "npm run build && wrangler deploy --env preview",
+    "deploy:production": "npm run build && wrangler deploy",
+    "smoke:preview": "node scripts/smoke-preview.mjs",
+    "smoke:production": "node scripts/smoke-production.mjs"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.90.20",
+    "hono": "^4.13.2",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.21.3",
+    "@cloudflare/workers-types": "^5.20260814.1",
+    "@eslint/js": "^10.0.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/node": "^24.10.1",
+    "@types/react": "^19.2.8",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "eslint": "^10.8.1",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.4",
+    "jsdom": "^28.1.0",
+    "prettier": "^3.9.6",
+    "typescript": "~6.0.2",
+    "typescript-eslint": "^8.67.0",
+    "vite": "^8.2.1",
+    "vitest": "^4.1.10",
+    "wrangler": "^4.123.0"
+  }
+}

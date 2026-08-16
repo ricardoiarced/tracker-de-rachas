@@ -1,0 +1,71 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "registro-de-habitos",
+  "account_id": "466c3c4bf7d390dedd7cc7cc2f3d4187",
+  "main": "src/worker/index.ts",
+  "compatibility_date": "2026-08-14",
+  "assets": {
+    "directory": "./dist/client",
+    "not_found_handling": "single-page-application"
+  },
+  "triggers": {
+    "crons": ["0 * * * *"]
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  "ratelimits": [
+    {
+      "name": "CREATION_RATE_LIMIT",
+      "namespace_id": "1014",
+      "simple": { "limit": 2, "period": 60 }
+    },
+    {
+      "name": "REQUEST_RATE_LIMIT",
+      "namespace_id": "1015",
+      "simple": { "limit": 300, "period": 60 }
+    },
+    {
+      "name": "SESSION_RATE_LIMIT",
+      "namespace_id": "1016",
+      "simple": { "limit": 120, "period": 60 }
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "registro-de-habitos",
+      "database_id": "f43263ff-6f8c-4a35-9d23-91845eb7f780"
+    }
+  ],
+  "env": {
+    "preview": {
+      "name": "registro-de-habitos-preview",
+      "ratelimits": [
+        {
+          "name": "CREATION_RATE_LIMIT",
+          "namespace_id": "2014",
+          "simple": { "limit": 2, "period": 60 }
+        },
+        {
+          "name": "REQUEST_RATE_LIMIT",
+          "namespace_id": "2015",
+          "simple": { "limit": 300, "period": 60 }
+        },
+        {
+          "name": "SESSION_RATE_LIMIT",
+          "namespace_id": "2016",
+          "simple": { "limit": 120, "period": 60 }
+        }
+      ],
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "registro-de-habitos-preview",
+          "database_id": "c88196ec-d867-4f46-9818-20b481e53c14"
+        }
+      ]
+    }
+  }
+}

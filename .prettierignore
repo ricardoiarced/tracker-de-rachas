@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.wrangler/
+coverage/
+.agents/
+docs/agents/
+tracker-de-rachas.html
+tracker-stats.js
