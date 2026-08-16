@@ -1,1 +1,2 @@
 migrations/*.sql text eol=lf
+database/*.sql text eol=lf

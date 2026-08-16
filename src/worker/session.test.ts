@@ -3,6 +3,7 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import schema from "../../migrations/0001_initial.sql?raw";
 import securitySchema from "../../migrations/0002_security_limits.sql?raw";
 import initialDateSchema from "../../migrations/0003_session_initial_date.sql?raw";
+import securityTriggers from "../../database/security-triggers.sql?raw";
 import worker from "./index";
 
 const origin = "https://demo.test";
@@ -15,8 +16,8 @@ function sessionRequest(init: RequestInit = {}) {
 }
 
 beforeAll(async () => {
-  for (const statement of `${schema}\n${securitySchema}\n${initialDateSchema}`.split(
-    /;\s*(?=CREATE|ALTER|$)/
+  for (const statement of `${schema}\n${securitySchema}\n${initialDateSchema}\n${securityTriggers}`.split(
+    /;\s*(?=CREATE|ALTER|DROP|$)/
   )) {
     if (statement.trim()) await env.DB.prepare(statement).run();
   }

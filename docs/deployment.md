@@ -1,8 +1,9 @@
 # Despliegue
 
-GitHub Actions valida cada cambio con una instalación reproducible (`npm ci`), formato, lint,
-tipos, pruebas y `npm audit` de severidad alta. Los despliegues nunca se ejecutan antes de esos
-gates.
+GitHub Actions valida cada cambio con una instalación reproducible (`npm ci`), escaneo de secretos,
+formato, lint, tipos, pruebas y `npm audit` de severidad alta. El job también aplica las migraciones
+en una D1 local vacía y comprueba los triggers de seguridad. Los despliegues nunca se ejecutan antes
+de esos gates.
 
 Las solicitudes de cambio del repositorio despliegan `registro-de-habitos-preview` contra la D1
 `registro-de-habitos-preview`. Solo un push validado a `main` puede desplegar
@@ -19,7 +20,10 @@ ni despliegan un preview.
 
 El token es el único secreto requerido por el workflow. El ID de cuenta y los IDs de D1 son
 identificadores de recursos, no credenciales, y viven en `wrangler.jsonc` para que las migraciones
-sean reproducibles.
+sean reproducibles. Los triggers de capacidad se aplican después de cada migración mediante
+`wrangler d1 execute --file`: Wrangler no puede registrar de forma fiable una migración remota que
+contiene triggers. El archivo primero sustituye todos los triggers y el script confirma su conjunto
+completo; por tanto la operación es idempotente, se detiene ante el primer error y se puede repetir.
 
 ## Controles operativos
 
@@ -42,7 +46,7 @@ limit distintos para que el preview no consuma la capacidad pública.
 
 ## Verificación posterior
 
-Los jobs de despliegue comprueban que `GET /api/session` en cada URL pública devuelve `401` sin una
-Sesión demo. El preview además ejecuta un baseline anónimo de OWASP ZAP como base de DAST; sus
-hallazgos no bloquean todavía el preview mientras los controles de seguridad se completan en sus
-tickets correspondientes.
+El job de producción comprueba que `GET /api/session` devuelve `401` sin una Sesión demo. El preview
+crea una Sesión demo y un Hábito para comprobar la ruta Worker-D1 y los triggers desplegados. Además
+ejecuta un baseline anónimo de OWASP ZAP como base de DAST; sus hallazgos no bloquean todavía el
+preview mientras los controles de seguridad se completan en sus tickets correspondientes.
