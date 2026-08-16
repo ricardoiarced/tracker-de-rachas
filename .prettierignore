@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.wrangler/
+coverage/
+.agents/
+docs/agents/
+docs/research/
+tracker-de-rachas.html
+tracker-stats.js
+results.sarif
